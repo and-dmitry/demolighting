@@ -1,0 +1,4 @@
+[flake8]
+exclude = .git,__pycache__,migrations
+per-file-ignores =
+    demolighting/settings.py:E501
