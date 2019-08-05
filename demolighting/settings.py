@@ -110,7 +110,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'W-SU'
 
 USE_I18N = True
 
@@ -135,4 +135,34 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ],
+}
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'default': {
+            'format': '%(asctime)s %(levelname)-8s %(name)-30s %(message)s'
+        }
+    },
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'dev.log',
+            'mode': 'w',
+            'formatter': 'default',
+        },
+    },
+    'root': {
+        'handlers': ['file'],
+        'level': 'DEBUG'
+    },
+    'loggers': {
+        'django': {
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
 }
