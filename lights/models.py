@@ -28,7 +28,7 @@ class Lamp(models.Model):
 
     @property
     def total_working_time(self):
-        # Calcute total duration of closed periods for this lamp.
+        # Calculate total duration of closed periods for this lamp
         result = (
             self.periods
             .filter(end__isnull=False)
@@ -37,16 +37,12 @@ class Lamp(models.Model):
                 output_field=models.DurationField()))
             .aggregate(total=Sum('period_length'))
         )
-        # TODO: this can be cached
         total = result['total'] or timedelta(0)
 
-        # Add duration of active period. Simple "where end not null
-        # order by start desc" wouldn't work - there may be some
-        # abandoned periods in the table (see WorkingPeriod
-        # docstring). This can be done with a query but I doubt it
-        # would be faster because of subquery.
+        # Add duration of active period.
+        # TODO: rewrite as a query
+        # TODO: rewrite as a single query?
         try:
-            # TODO: add only('start')?
             last_period = self.periods.latest('start')
         except WorkingPeriod.DoesNotExist:
             pass
