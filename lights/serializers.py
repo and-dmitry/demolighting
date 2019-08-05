@@ -18,6 +18,9 @@ class LampSerializer(serializers.HyperlinkedModelSerializer):
             'is_on',
             'brightness',
             'last_switch',
+            # TODO: This value should be excluded from list
+            # representation or cached. It's expensive to calculate
+            # for every lamp.
             'total_working_time',
         ]
         read_only_fields = ['name', 'last_switch']
