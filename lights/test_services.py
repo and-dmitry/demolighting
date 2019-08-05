@@ -2,9 +2,9 @@ from unittest import mock
 
 from django.test import TestCase
 
-from .models import Lamp, WorkingPeriod
-from .services import LampService
-from .switch import Switch
+from .models import Lamp
+from .services import ExternalError, LampService
+from .switch import Switch, SwitchError
 
 
 class LampServiceTests(TestCase):
@@ -104,8 +104,17 @@ class LampServiceTests(TestCase):
         second_period = lamp.periods.latest('start')
         self.assertNotEqual(second_period.pk, first_period.pk)
 
+    def test_switch_error(self):
+        lamp = Lamp.objects.create(name='the lamp')
 
-# TODO: switch error
+        self.mock_switch.turn_on.side_effect = SwitchError('switch error')
+        with self.assertRaises(ExternalError):
+            self.service.set_lamp_mode(lamp.pk, on=True)
+
+        lamp.refresh_from_db()
+        self.assertEqual(lamp.is_on, False)
+
+
 # TODO: no change - switch on, switch on
 # TODO: no lamp
 # TODO: return instance?

@@ -1,4 +1,5 @@
 from datetime import datetime
+from unittest import mock
 
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -7,6 +8,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from .models import Lamp
+from .switch import SwitchError
 
 
 class BasicTests(TestCase):
@@ -131,6 +133,16 @@ class LampsTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         lamp.refresh_from_db()
         self.assertEqual(lamp.name, name)
+
+    @mock.patch('lights.services.lamp_service.switch')
+    def test_switch_error(self, mock_switch):
+        mock_switch.turn_on.side_effect = SwitchError('switch error')
+        lamp = Lamp.objects.create(name='lamp1')
+        # TODO: extract reverse method
+        response = self.client.patch(f'/api/lamps/{lamp.id}/',
+                                     {'is_on': True})
+        self.assertEqual(response.status_code,
+                         status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
 # TODO: test 0% brightness

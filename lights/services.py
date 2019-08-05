@@ -9,26 +9,33 @@ from django.db import transaction
 from django.utils import timezone
 
 from .models import Lamp, WorkingPeriod
-from .switch import Switch
+from .switch import Switch, SwitchError
 
 
 logger = logging.getLogger(__name__)
 
 
+class ExternalError(Exception):
+    """External system error."""
+
+
 class LampService:
 
+    """Service for controlling lamps."""
+
     def __init__(self, external_switch):
-        self._switch = external_switch
+        self.switch = external_switch
 
     def set_lamp_mode(self, lamp_id, *, on=None, brightness=None):
         """Set operating mode for a lamp.
 
-        Turn the lamp on/off, set brightness from kwargs. Returns Lamp
-        instance.
+        Turn the lamp on/off, set brightness.
 
         This method does all the required processing: applies
         parameters to the actual lamp through the switch, updates the
-        information in the database, etc.
+        information in the database, etc. These actions are wrapped in
+        a transaction. If switch operation fails, the model changes
+        are rolled back.
 
         Turning lamp on starts (creates) new active working
         period. Active period is the last (order by start desc)
@@ -38,16 +45,19 @@ class LampService:
         Changing brightness when lamp is on closes active period and
         starts a new one.
 
+        :returns: Lamp instance
+        :raises ExternalError:
+
         """
         with transaction.atomic():
             instance = self._persist_mode(lamp_id, on, brightness)
-        self._call_switch(lamp_id, on, brightness)
+            self._call_switch(lamp_id, on, brightness)
         return instance
 
     def _persist_mode(self, lamp_id, on, brightness):
         """Save mode change to db.
 
-        Returns Lamp instance.
+        :returns: Lamp instance
         """
         # TODO: check for changes
         now = timezone.now()
@@ -72,15 +82,24 @@ class LampService:
     def _call_switch(self, lamp_id, on, brightness):
         """Perform calls to the switch.
 
-        This supposed to control the actual lamps.
-        """
-        if brightness is not None:
-            self._switch.set_brightness(lamp_id=lamp_id, brightness=brightness)
+        This is supposed to control the actual lamps.
 
-        if on is True:
-            self._switch.turn_on(lamp_id)
-        elif on is False:
-            self._switch.turn_off(lamp_id)
+        :raises ExternalError:
+        """
+        # TODO: set brightness only when turning on (regardless of
+        # actual brightness change)?
+        try:
+            if brightness is not None:
+                self.switch.set_brightness(
+                    lamp_id=lamp_id,
+                    brightness=brightness)
+            if on is True:
+                self.switch.turn_on(lamp_id)
+            elif on is False:
+                self.switch.turn_off(lamp_id)
+        except SwitchError as e:
+            logger.error('Failed to set mode for lamp %d: ' + str(e))
+            raise ExternalError('light switch error')
 
 
 def _open_period(lamp, timestamp, brightness):

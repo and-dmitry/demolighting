@@ -1,9 +1,16 @@
 from rest_framework import mixins, viewsets
+from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 
-from . import services
 from .models import Lamp
 from .serializers import LampSerializer
+from .services import lamp_service, ExternalError
+
+
+class ServiceUnavailableError(APIException):
+    status_code = 503
+    default_detail = 'Service temporarily unavailable, try again later.'
+    default_code = 'service_unavailable'
 
 
 class LampViewSet(mixins.RetrieveModelMixin,
@@ -30,9 +37,15 @@ class LampViewSet(mixins.RetrieveModelMixin,
                                                  data=request.data,
                                                  partial=True)
         request_serializer.is_valid(raise_exception=True)
-        instance = services.lamp_service.set_lamp_mode(
-            instance.pk,
-            on=request_serializer.validated_data.get('is_on'),
-            brightness=request_serializer.validated_data.get('brightness'))
+
+        try:
+            instance = lamp_service.set_lamp_mode(
+                instance.pk,
+                on=request_serializer.validated_data.get('is_on'),
+                brightness=request_serializer.validated_data.get('brightness'))
+        except ExternalError:
+            raise ServiceUnavailableError(
+                detail='Failed to switch the lamp, try again later')
+
         response_serializer = self.get_serializer(instance)
         return Response(response_serializer.data)
