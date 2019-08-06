@@ -26,7 +26,7 @@ class LampService:
     def __init__(self, external_switch):
         self.switch = external_switch
 
-    def set_lamp_mode(self, lamp_id, *, on=None, brightness=None):
+    def set_lamp_mode(self, lamp, *, on=None, brightness=None):
         """Set operating mode for a lamp.
 
         Turn the lamp on/off, set brightness.
@@ -45,23 +45,25 @@ class LampService:
         Changing brightness when lamp is on closes active period and
         starts a new one.
 
-        :returns: Lamp instance
+        Correct handling of concurrent requests would require
+        Repeatable Read isolation level or some sort of locking. But
+        such things are beyond the scope of this demo project (running
+        on SQLite). Real application would probably have a different
+        approach overall - asynchronous switch operations, tracking
+        both desired and current state of lamps, etc.
+
+        :param Lamp lamp: lamp instance, it is updated and saved here
         :raises ExternalError:
 
         """
         with transaction.atomic():
-            instance = self._persist_mode(lamp_id, on, brightness)
-            self._call_switch(lamp_id, on, brightness)
-        return instance
+            self._persist_mode(lamp, on, brightness)
+            self._call_switch(lamp.id, on, brightness)
 
-    def _persist_mode(self, lamp_id, on, brightness):
-        """Save mode change to db.
-
-        :returns: Lamp instance
-        """
+    def _persist_mode(self, lamp, on, brightness):
+        """Save mode change to db."""
         # TODO: check for changes
         now = timezone.now()
-        lamp = Lamp.objects.get(pk=lamp_id)
         if on is not None:
             lamp.is_on = on
             lamp.last_switch = now

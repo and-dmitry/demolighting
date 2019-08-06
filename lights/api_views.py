@@ -18,9 +18,7 @@ class LampViewSet(mixins.RetrieveModelMixin,
                   viewsets.GenericViewSet):
     """Viewset for Lamp.
 
-    Creating and deleting resources is not allowed through this
-    API. That's why this class inherits specific mixins instead of
-    ModelViewSet.
+    Creating and deleting resources is not allowed.
 
     PUT is not necessary for this API - creation is handled by POST
     and replacement is not allowed. Partial update is handled by
@@ -30,22 +28,20 @@ class LampViewSet(mixins.RetrieveModelMixin,
     serializer_class = LampSerializer
 
     def partial_update(self, request, pk=None):
-        # TODO: avoid getting instance from db here? Service does this
-        # again in transaction.
-        instance = self.get_object()
-        request_serializer = self.get_serializer(instance,
+        lamp = self.get_object()
+        request_serializer = self.get_serializer(lamp,
                                                  data=request.data,
                                                  partial=True)
         request_serializer.is_valid(raise_exception=True)
 
         try:
-            instance = lamp_service.set_lamp_mode(
-                instance.pk,
+            lamp_service.set_lamp_mode(
+                lamp,
                 on=request_serializer.validated_data.get('is_on'),
                 brightness=request_serializer.validated_data.get('brightness'))
         except ExternalError:
             raise ServiceUnavailableError(
                 detail='Failed to switch the lamp, try again later')
 
-        response_serializer = self.get_serializer(instance)
+        response_serializer = self.get_serializer(lamp)
         return Response(response_serializer.data)

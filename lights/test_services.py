@@ -15,16 +15,10 @@ class LampServiceTests(TestCase):
                                                 instance=True)
         self.service = LampService(self.mock_switch)
 
-    def test_return(self):
-        lamp = Lamp.objects.create(name='the lamp')
-
-        instance = self.service.set_lamp_mode(lamp.pk, on=True)
-        self.assertEqual(instance, lamp)
-
     def test_turn_on(self):
         lamp = Lamp.objects.create(name='the lamp')
 
-        self.service.set_lamp_mode(lamp.pk, on=True)
+        self.service.set_lamp_mode(lamp, on=True)
 
         self.mock_switch.turn_on.assert_called_once_with(lamp.pk)
         self.mock_switch.set_brightness.assert_not_called()
@@ -35,7 +29,7 @@ class LampServiceTests(TestCase):
     def test_turn_off(self):
         lamp = Lamp.objects.create(name='the lamp', is_on=True)
 
-        self.service.set_lamp_mode(lamp.pk, on=False)
+        self.service.set_lamp_mode(lamp, on=False)
 
         self.mock_switch.turn_off.assert_called_once_with(lamp.pk)
         lamp.refresh_from_db()
@@ -45,7 +39,7 @@ class LampServiceTests(TestCase):
     def test_change_brightness(self):
         lamp = Lamp.objects.create(name='the lamp', brightness=50)
         new_brightness = lamp.brightness + 10
-        self.service.set_lamp_mode(lamp.pk, brightness=new_brightness)
+        self.service.set_lamp_mode(lamp, brightness=new_brightness)
 
         self.mock_switch.set_brightness.assert_called_once_with(
             lamp_id=lamp.pk,
@@ -63,7 +57,7 @@ class LampServiceTests(TestCase):
                                    is_on=False,
                                    brightness=brightness)
 
-        self.service.set_lamp_mode(lamp.pk, on=True)
+        self.service.set_lamp_mode(lamp, on=True)
 
         lamp.refresh_from_db()
         period = lamp.periods.latest('start')
@@ -71,7 +65,7 @@ class LampServiceTests(TestCase):
         self.assertEqual(period.start, lamp.last_switch)
         self.assertIsNone(period.end)
 
-        self.service.set_lamp_mode(lamp.pk, on=False)
+        self.service.set_lamp_mode(lamp, on=False)
 
         lamp.refresh_from_db()
         period.refresh_from_db()
@@ -84,7 +78,7 @@ class LampServiceTests(TestCase):
         """
         lamp = Lamp.objects.create(name='the lamp', brightness=50)
         new_brightness = lamp.brightness + 10
-        self.service.set_lamp_mode(lamp.pk, brightness=new_brightness)
+        self.service.set_lamp_mode(lamp, brightness=new_brightness)
 
         lamp.refresh_from_db()
         self.assertEqual(lamp.periods.count(), 0)
@@ -95,11 +89,11 @@ class LampServiceTests(TestCase):
         Should reset period.
         """
         lamp = Lamp.objects.create(name='the lamp', brightness=50)
-        self.service.set_lamp_mode(lamp.pk, on=True)
+        self.service.set_lamp_mode(lamp, on=True)
         first_period = lamp.periods.latest('start')
 
         new_brightness = lamp.brightness + 10
-        self.service.set_lamp_mode(lamp.pk, brightness=new_brightness)
+        self.service.set_lamp_mode(lamp, brightness=new_brightness)
 
         second_period = lamp.periods.latest('start')
         self.assertNotEqual(second_period.pk, first_period.pk)
@@ -109,14 +103,19 @@ class LampServiceTests(TestCase):
 
         self.mock_switch.turn_on.side_effect = SwitchError('switch error')
         with self.assertRaises(ExternalError):
-            self.service.set_lamp_mode(lamp.pk, on=True)
+            self.service.set_lamp_mode(lamp, on=True)
 
         lamp.refresh_from_db()
         self.assertEqual(lamp.is_on, False)
 
+    def test_instance_update(self):
+        """Test if instance is updated."""
+        lamp = Lamp.objects.create(name='the lamp')
+
+        self.service.set_lamp_mode(lamp, on=True)
+        self.assertEqual(lamp.is_on, True)
+
 
 # TODO: no change - switch on, switch on
-# TODO: no lamp
-# TODO: return instance?
 # TODO: turn on, change brightness;
 # TODO: turn off, change brightness

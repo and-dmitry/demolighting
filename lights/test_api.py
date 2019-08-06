@@ -144,6 +144,12 @@ class LampsTests(TestCase):
         self.assertEqual(response.status_code,
                          status.HTTP_503_SERVICE_UNAVAILABLE)
 
+    def test_turn_on_404(self):
+        """Test turning on a non-existent lamp."""
+        response = self.client.patch(f'/api/lamps/100/',
+                                     {'is_on': True})
+        self.assertEqual(response.status_code,
+                         status.HTTP_404_NOT_FOUND)
 
 # TODO: test 0% brightness
 # TODO: test paging
