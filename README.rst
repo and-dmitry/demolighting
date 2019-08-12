@@ -18,7 +18,7 @@ Prerequisites: Python 3.7, pipenv, httpie (to use the API)
 
 .. code-block::
 
-   git clone git@github.com:and-dmitry/demolighting.git
+   git clone https://github.com/and-dmitry/demolighting.git
    cd demolighting/
    pipenv install --dev
    pipenv shell
