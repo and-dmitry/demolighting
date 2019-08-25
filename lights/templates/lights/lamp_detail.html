@@ -1,0 +1,35 @@
+{% extends './base_lights.html' %}
+
+{% block title %}Lamp {{ lamp.name }}{% endblock title %}
+
+{% block content %}
+    <table>
+        <tr>
+            <td>Name</td>
+            <td>{{ lamp.name }}</td>
+        </tr>
+        <tr>
+            <td>Status</td>
+            <td>
+                {% if lamp.is_on %}
+                    ON
+                {% else %}
+                    OFF
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td>Brightness</td>
+            <td>{{ lamp.brightness }}% </td>
+        </tr>
+        <tr>
+            <td>Last switch time</td>
+            <td>{{ lamp.last_switch }}</td>
+        </tr>
+        <tr>
+            <td>Total working time</td>
+            <td>{{ lamp.total_working_time }}</td>
+        </tr>
+    </table>
+    <a href="{% url 'lights:lamp-site-list' %}">Back to list</a>
+{% endblock content %}
