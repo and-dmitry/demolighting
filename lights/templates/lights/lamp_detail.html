@@ -31,5 +31,6 @@
             <td>{{ lamp.total_working_time }}</td>
         </tr>
     </table>
+    <a href="{% url 'lights:lamp-site-control' pk=lamp.pk %}">Control</a>
     <a href="{% url 'lights:lamp-site-list' %}">Back to list</a>
 {% endblock content %}

@@ -3,7 +3,7 @@
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 
 from selenium import webdriver
-from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.common.keys import Keys
 
 from .models import Lamp
 
@@ -61,3 +61,28 @@ class LampsFunctionalTests(StaticLiveServerTestCase):
 
         list_link = self.driver.find_element_by_link_text('Back to list')
         self.assertEqual(list_link.get_attribute('href'), list_url)
+
+    def test_view_control_display(self):
+        lamp = Lamp.objects.create(name='lamp1')
+
+        self.driver.get(f'{self.live_server_url}/lamps/{lamp.pk}/control')
+        self.assertIn(lamp.name, self.driver.page_source)
+        form = self.driver.find_element_by_tag_name('form')
+        brightness_input = form.find_element_by_name('brightness')
+        self.assertEqual(brightness_input.get_attribute('value'),
+                         str(lamp.brightness))
+        switch_inputs = form.find_elements_by_name('status')
+        choices = {input.get_attribute('value'): input
+                   for input in switch_inputs}
+        choice_values = set(choices.keys())
+        self.assertEqual(choice_values, {'on', 'off'})
+        off_is_checked = choices['off'].get_attribute('checked')
+        self.assertTrue(off_is_checked)
+
+    def test_view_control_apply(self):
+        lamp = Lamp.objects.create(name='lamp1')
+
+        self.driver.get(f'{self.live_server_url}/lamps/{lamp.pk}/control')
+
+        brightness_input = self.driver.find_element_by_id('id_brightness')
+        brightness_input.send_keys(Keys.ENTER)
