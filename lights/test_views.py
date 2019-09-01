@@ -1,3 +1,5 @@
+from unittest import mock
+
 from django.test import Client, TestCase
 
 from .models import Lamp
@@ -64,3 +66,17 @@ class LampsSiteViewsTests(TestCase):
                                     {'brightness': '20',
                                      'status': 'on'})
         self.assertRedirects(response, f'/lamps/{lamp.pk}')
+
+    @mock.patch('lights.views.lamp_service', autospec=True)
+    def test_control_service_call(self, mock_lamp_service):
+        lamp = Lamp.objects.create(name='lamp1')
+        new_brightness = 75
+
+        self.client.post(f'/lamps/{lamp.pk}/control', {
+            'brightness': str(new_brightness),
+            'status': 'on'})
+
+        mock_lamp_service.set_lamp_mode.assert_called_once_with(
+            lamp,
+            on=True,
+            brightness=new_brightness)

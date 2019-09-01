@@ -3,6 +3,7 @@ from django.shortcuts import redirect
 from django.views.generic import DetailView, ListView, UpdateView
 
 from .models import Lamp
+from .services import lamp_service
 
 
 def root_view(request):
@@ -39,8 +40,9 @@ class LampControlForm(forms.ModelForm):
                 self.STATUS_ON if self.instance.is_on else self.STATUS_OFF)
 
     def save(self, commit=True):
-        self.instance.is_on = self.cleaned_data['status'] == self.STATUS_ON
-        return super().save(commit=commit)
+        # TODO: Not saving instance is weird. Probably shouldn't use
+        # ModelForm at all.
+        return self.instance
 
 
 class LampControlView(UpdateView):
@@ -48,3 +50,10 @@ class LampControlView(UpdateView):
     model = Lamp
     template_name = 'lights/lamp_control.html'
     form_class = LampControlForm
+
+    def form_valid(self, form):
+        lamp_service.set_lamp_mode(
+            self.object,
+            on=form.cleaned_data['status'] == form.STATUS_ON,
+            brightness=form.cleaned_data['brightness'])
+        return super().form_valid(form)
