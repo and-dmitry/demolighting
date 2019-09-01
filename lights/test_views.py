@@ -80,3 +80,30 @@ class LampsSiteViewsTests(TestCase):
             lamp,
             on=True,
             brightness=new_brightness)
+
+    def test_control_get_404(self):
+        response = self.client.get(f'/lamps/1/control')
+        self.assertEqual(response.status_code, 404)
+
+    def test_control_post_404(self):
+        response = self.client.post(f'/lamps/1/control')
+        self.assertEqual(response.status_code, 404)
+
+    def test_control_validation_error_response(self):
+        lamp = Lamp.objects.create(name='lamp1')
+
+        response = self.client.post(f'/lamps/{lamp.pk}/control', {
+            'brightness': 101,
+            'status': 'on'})
+
+        self.assertEqual(response.status_code, 200)
+
+    @mock.patch('lights.views.lamp_service', autospec=True)
+    def test_control_validation_error_action(self, mock_lamp_service):
+        lamp = Lamp.objects.create(name='lamp1')
+
+        self.client.post(f'/lamps/{lamp.pk}/control', {
+            'brightness': 101,
+            'status': 'on'})
+
+        mock_lamp_service.assert_not_called()
