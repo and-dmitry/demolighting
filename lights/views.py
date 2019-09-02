@@ -20,6 +20,9 @@ class LampDetailView(DetailView):
     model = Lamp
 
 
+# Simple Form seems like a better fit here than ModelForm. We're
+# changing one field, providing min and max values to the widget for
+# the other. And we don't need save().
 class LampControlForm(forms.Form):
     # Using radio button instead of model's is_on
     STATUS_ON = 'on'
@@ -29,6 +32,8 @@ class LampControlForm(forms.Form):
     status = forms.ChoiceField(choices=STATUS_CHOICES,
                                widget=forms.RadioSelect)
 
+    # Can't use formfield() to copy field from model, because it
+    # ignores min and max validators.
     brightness = forms.IntegerField(
         label='Brightness %',
         min_value=1,
