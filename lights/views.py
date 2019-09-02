@@ -1,6 +1,9 @@
 from django import forms
-from django.shortcuts import get_object_or_404, redirect, render
-from django.views.generic import DetailView, ListView, View
+from django.shortcuts import redirect
+from django.views.generic import DetailView, ListView
+
+from django.views.generic.edit import FormView
+from django.views.generic.detail import SingleObjectMixin
 
 from .models import Lamp
 from .services import lamp_service
@@ -40,31 +43,33 @@ class LampControlForm(forms.Form):
         max_value=100)
 
 
-class LampControlView(View):
+class LampControlView(SingleObjectMixin, FormView):
 
-    def get(self, request, pk):
-        lamp = get_object_or_404(Lamp, pk=pk)
-        status = (LampControlForm.STATUS_ON if lamp.is_on
-                  else LampControlForm.STATUS_OFF)
-        form = LampControlForm(initial={
-            'brightness': lamp.brightness,
-            'status': status})
-        return render(request, 'lights/lamp_control.html', {
-            'lamp': lamp,
-            'form': form,
-        })
+    model = Lamp
+    form_class = LampControlForm
+    template_name = 'lights/lamp_control.html'
 
-    def post(self, request, pk):
-        lamp = get_object_or_404(Lamp, pk=pk)
-        form = LampControlForm(request.POST)
-        if form.is_valid():
-            lamp_service.set_lamp_mode(
-                lamp,
-                on=form.cleaned_data['status'] == form.STATUS_ON,
-                brightness=form.cleaned_data['brightness'])
-            return redirect(lamp)
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().get(request, *args, **kwargs)
 
-        return render(request, 'lights/lamp_control.html', {
-            'lamp': lamp,
-            'form': form,
-        })
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().post(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
+    def get_initial(self):
+        return {
+            'brightness': self.object.brightness,
+            'status': (LampControlForm.STATUS_ON if self.object.is_on
+                       else LampControlForm.STATUS_OFF)}
+
+    def form_valid(self, form):
+        lamp = self.object
+        lamp_service.set_lamp_mode(
+            lamp,
+            on=form.cleaned_data['status'] == form.STATUS_ON,
+            brightness=form.cleaned_data['brightness'])
+        return super().form_valid(form)
