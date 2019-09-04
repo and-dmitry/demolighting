@@ -1,15 +1,44 @@
 from unittest import mock
 
+from django.conf import settings
+from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
 from .models import Lamp
 from .views import LampControlForm
 
 
+class LoginTests(TestCase):
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_login_view(self):
+        response = self.client.get(settings.LOGIN_URL)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Log in')
+
+    # TODO: DRY
+    def test_lamp_list_no_auth(self):
+        response = self.client.get('/lamps/')
+        self.assertRedirects(response, f'{settings.LOGIN_URL}?next=/lamps/')
+
+    def test_lamp_detail_no_auth(self):
+        response = self.client.get('/lamps/1')
+        self.assertRedirects(response, f'{settings.LOGIN_URL}?next=/lamps/1')
+
+    def test_lamp_control_no_auth(self):
+        response = self.client.get('/lamps/1/control')
+        self.assertRedirects(response,
+                             f'{settings.LOGIN_URL}?next=/lamps/1/control')
+
+
 class LampsSiteViewsTests(TestCase):
 
     def setUp(self):
         self.client = Client()
+        user = User.objects.create_user('testuser')
+        self.client.force_login(user)
 
     def test_root_redirect(self):
         response = self.client.get('/')

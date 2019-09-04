@@ -1,9 +1,11 @@
 """Functional tests."""
 
+from django.contrib.auth.models import User
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+from seleniumlogin import force_login
 
 from .models import Lamp
 
@@ -19,6 +21,15 @@ class LampsFunctionalTests(StaticLiveServerTestCase):
     def tearDownClass(cls):
         cls.driver.close()
         super().tearDownClass()
+
+    def setUp(self):
+        user = User.objects.create_user('testuser')
+        force_login(user,
+                    self.driver,
+                    self.live_server_url,
+                    # Setting domain cookie for localhost isn't
+                    # supported by Firefox (and RFC)
+                    set_domain_in_session_cookie=False)
 
     def test_view_list(self):
         lamp_off = Lamp.objects.create(name='lamp1')

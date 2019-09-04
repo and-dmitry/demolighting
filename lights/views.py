@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect
 from django.views.generic import DetailView, ListView
 
@@ -13,12 +14,12 @@ def root_view(request):
     return redirect('lights:lamp-site-list')
 
 
-class LampListView(ListView):
+class LampListView(LoginRequiredMixin, ListView):
 
     model = Lamp
 
 
-class LampDetailView(DetailView):
+class LampDetailView(LoginRequiredMixin, DetailView):
 
     model = Lamp
 
@@ -43,7 +44,7 @@ class LampControlForm(forms.Form):
         max_value=100)
 
 
-class LampControlView(SingleObjectMixin, FormView):
+class LampControlView(LoginRequiredMixin, SingleObjectMixin, FormView):
 
     model = Lamp
     form_class = LampControlForm

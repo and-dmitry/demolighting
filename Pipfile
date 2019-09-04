@@ -10,6 +10,7 @@ flake8 = "*"
 django = "~=2.2.4"
 djangorestframework = "~=3.10"
 selenium = "~=3.141"
+django-selenium-login = "~=1.1"
 
 [requires]
 python_version = "3.7"
