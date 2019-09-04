@@ -18,19 +18,18 @@ class LoginTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Log in')
 
-    # TODO: DRY
+    def checkLoginRedirect(self, path):
+        response = self.client.get(path)
+        self.assertRedirects(response, f'{settings.LOGIN_URL}?next={path}')
+
     def test_lamp_list_no_auth(self):
-        response = self.client.get('/lamps/')
-        self.assertRedirects(response, f'{settings.LOGIN_URL}?next=/lamps/')
+        self.checkLoginRedirect('/lamps/')
 
     def test_lamp_detail_no_auth(self):
-        response = self.client.get('/lamps/1')
-        self.assertRedirects(response, f'{settings.LOGIN_URL}?next=/lamps/1')
+        self.checkLoginRedirect('/lamps/1')
 
     def test_lamp_control_no_auth(self):
-        response = self.client.get('/lamps/1/control')
-        self.assertRedirects(response,
-                             f'{settings.LOGIN_URL}?next=/lamps/1/control')
+        self.checkLoginRedirect('/lamps/1/control')
 
 
 class LampsSiteViewsTests(TestCase):
