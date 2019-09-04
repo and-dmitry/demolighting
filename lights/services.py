@@ -8,7 +8,7 @@ import logging
 from django.db import transaction
 from django.utils import timezone
 
-from .models import Lamp, WorkingPeriod
+from .models import WorkingPeriod
 from .switch import Switch, SwitchError
 
 
