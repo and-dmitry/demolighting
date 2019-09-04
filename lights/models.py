@@ -6,6 +6,7 @@ from django.core.validators import (
 )
 from django.db import models
 from django.db.models import ExpressionWrapper, F, Sum
+from django.urls import reverse
 from django.utils import timezone
 
 
@@ -50,6 +51,9 @@ class Lamp(models.Model):
             if not last_period.end:
                 total += last_period.duration
         return total
+
+    def get_absolute_url(self):
+        return reverse('lights:lamp-site-detail', kwargs={'pk': self.pk})
 
 
 class WorkingPeriod(models.Model):

@@ -1,0 +1,28 @@
+{% extends './base_lights.html' %}
+
+{% block title %}Lamps{% endblock title %}
+
+{% block content %}
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Status</th>
+        </tr>
+        {% for lamp in lamp_list %}
+            <tr>
+                <td>
+                    <a href="{{ lamp.get_absolute_url }}">
+                        {{ lamp.name }}
+                    </a>
+                </td>
+                <td>
+                    {% if lamp.is_on %}
+                        ON
+                    {% else %}
+                        OFF
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock content %}
